@@ -143,10 +143,14 @@ export type StatoCategoria =
   | 'Consigliato'
   | 'Critico'
 
-export type Pagina = 'home' | 'componenti' | 'pc' | 'account'
+export type Pagina = 'home' | 'componenti' | 'pc' | 'scarica' | 'account'
 
 export interface Account {
   nome: string
   email: string
   creatoIl: string
+  /** Come è stato creato il profilo: con Google o solo su questo dispositivo. */
+  provider?: 'google' | 'locale'
+  /** Foto del profilo Google (indirizzo web), se presente. */
+  foto?: string
 }

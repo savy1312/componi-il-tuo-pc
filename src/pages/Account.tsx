@@ -1,52 +1,14 @@
-import { Copy, Download, FolderOpen, LogOut, Plus, Save, ShieldAlert, Smartphone, Trash2, User } from 'lucide-react'
+import { Copy, Download, FolderOpen, LogOut, Plus, Save, ShieldAlert, Trash2, User } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { analizza } from '../engine/compat'
 import { dataIt, dataOraIt, euro, iniziali } from '../lib/format'
 import { scaricaBlob } from '../lib/export'
-import { useInstallazione } from '../lib/pwa'
+import { esciDaGoogle, googleAttivo } from '../lib/google'
 import { qualitaEffettiva } from '../lib/qualita'
 import { useStore } from '../store/useStore'
+import { AccessoGoogle } from '../ui/AccessoGoogle'
+import { MessaggioAggiornamenti } from '../ui/Aggiornamenti'
 import { Badge, Bottone, Interruttore, Vuoto, tonoBuild } from '../ui/base'
-
-function SezioneApp() {
-  const { installata, puoiInstallare, ios, installa } = useInstallazione()
-  const toast = useStore((s) => s.toast)
-  return (
-    <section className="rounded-2xl border border-cy/25 bg-gradient-to-br from-cy/[0.08] to-transparent p-5" aria-label="App per telefono">
-      <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-txt">
-        <Smartphone size={16} className="text-cy" /> App per telefono
-      </h2>
-      {installata ? (
-        <p className="mt-2 text-[12.5px] leading-relaxed text-mut">Stai usando l’app installata. Funziona anche senza connessione e i tuoi progetti restano salvati su questo dispositivo.</p>
-      ) : (
-        <>
-          <p className="mt-2 text-[12.5px] leading-relaxed text-mut">Installala sul telefono: icona sulla schermata Home, schermo intero e uso anche senza internet.</p>
-          {puoiInstallare ? (
-            <Bottone variante="primario" className="mt-3" onClick={async () => ((await installa()) ? toast('successo', 'App installata! La trovi nella schermata Home.') : undefined)}>
-              <Download size={14} /> Installa l’app
-            </Bottone>
-          ) : (
-            <ol className="mt-3 list-decimal space-y-1 pl-5 text-[12.5px] leading-relaxed text-txt">
-              {ios ? (
-                <>
-                  <li>Apri questo sito con <b>Safari</b>.</li>
-                  <li>Tocca il pulsante <b>Condividi</b> (il quadrato con la freccia).</li>
-                  <li>Scegli <b>Aggiungi alla schermata Home</b>.</li>
-                </>
-              ) : (
-                <>
-                  <li>Apri questo sito con <b>Chrome</b> sul telefono.</li>
-                  <li>Tocca i <b>tre puntini</b> in alto a destra.</li>
-                  <li>Scegli <b>Installa app</b> (o «Aggiungi a schermata Home»).</li>
-                </>
-              )}
-            </ol>
-          )}
-        </>
-      )}
-    </section>
-  )
-}
 
 export default function Account() {
   const account = useStore((s) => s.account)
@@ -99,13 +61,65 @@ export default function Account() {
         <div className="space-y-4">
           <section className="rounded-2xl glass-solid p-5" aria-label="Profilo">
             <div className="flex items-center gap-3">
-              <div className={`grid h-14 w-14 place-items-center rounded-full text-[18px] font-semibold ${account ? 'bg-gradient-to-br from-cy to-ind text-obs' : 'bg-white/[0.06] text-mut'}`}>{account ? iniziali(account.nome) : <User size={22} />}</div>
+              {account?.foto ? (
+                <img src={account.foto} alt="" referrerPolicy="no-referrer" className="h-14 w-14 rounded-full object-cover" />
+              ) : (
+                <div className={`grid h-14 w-14 place-items-center rounded-full text-[18px] font-semibold ${account ? 'bg-gradient-to-br from-cy to-ind text-obs' : 'bg-white/[0.06] text-mut'}`}>{account ? iniziali(account.nome) : <User size={22} />}</div>
+              )}
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold text-txt">{account ? account.nome : 'Ospite'}</p>
-                <p className="text-[12px] leading-snug text-mut">{account ? account.email : 'Crea un profilo per personalizzare l’esperienza'}</p>
-                {account && <p className="text-[11px] text-mut">Iscritto dal {dataIt(account.creatoIl)}</p>}
+                <p className="text-[12px] leading-snug text-mut">{account ? account.email : googleAttivo ? 'Accedi o registrati con il tuo account Google' : 'Crea un profilo per personalizzare l’esperienza'}</p>
+                {account && <p className="text-[11px] text-mut">{account.provider === 'google' ? 'Account Google · ' : ''}Iscritto dal {dataIt(account.creatoIl)}</p>}
               </div>
             </div>
+            {account?.provider === 'google' ? (
+              <p className="mt-5 text-[12px] leading-snug text-mut">Nome ed email arrivano dal tuo account Google. I progetti restano salvati su questo dispositivo.</p>
+            ) : googleAttivo && !account ? (
+              <div className="mt-5 space-y-4">
+                <AccessoGoogle />
+                <p className="text-center text-[11.5px] leading-snug text-mut">Se non hai ancora un profilo, Google lo crea al primo accesso. Non condividiamo nulla e non serve una password.</p>
+                <details className="rounded-xl border border-white/[0.08] px-3.5 py-2.5">
+                  <summary className="cursor-pointer text-[12.5px] font-medium text-mut">Preferisco non usare Google</summary>
+                  <div className="mt-3">
+            <form onSubmit={invia} className="space-y-3" noValidate>
+              <div>
+                <label htmlFor="acc-nome" className="mb-1 block text-[11.5px] font-medium text-mut">Nome</label>
+                <input id="acc-nome" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={40} autoComplete="name" className="w-full rounded-lg border border-white/[0.1] bg-obs px-3 py-2.5 text-[13.5px] text-txt focus:border-cy/60" />
+              </div>
+              <div>
+                <label htmlFor="acc-email" className="mb-1 block text-[11.5px] font-medium text-mut">Email</label>
+                <input id="acc-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" className="w-full rounded-lg border border-white/[0.1] bg-obs px-3 py-2.5 text-[13.5px] text-txt focus:border-cy/60" />
+              </div>
+              {errore && <p role="alert" className="text-[12px] text-rd">{errore}</p>}
+              <Bottone type="submit" variante="primario" className="w-full">
+                <Save size={14} /> {account ? 'Aggiorna profilo' : 'Crea profilo'}
+              </Bottone>
+              <p className="text-[11px] leading-snug text-mut">Il profilo e i progetti restano salvati su questo dispositivo, nel browser. Non viene creato alcun account online e non serve una password.</p>
+            </form>
+                  </div>
+                </details>
+              </div>
+            ) : googleAttivo && account ? (
+              <div className="mt-5 space-y-3">
+                <p className="text-[12px] leading-snug text-mut">Questo profilo è solo su questo dispositivo. Collegalo a Google per usarlo con il tuo account.</p>
+                <AccessoGoogle />
+            <form onSubmit={invia} className="space-y-3" noValidate>
+              <div>
+                <label htmlFor="acc-nome" className="mb-1 block text-[11.5px] font-medium text-mut">Nome</label>
+                <input id="acc-nome" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={40} autoComplete="name" className="w-full rounded-lg border border-white/[0.1] bg-obs px-3 py-2.5 text-[13.5px] text-txt focus:border-cy/60" />
+              </div>
+              <div>
+                <label htmlFor="acc-email" className="mb-1 block text-[11.5px] font-medium text-mut">Email</label>
+                <input id="acc-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" className="w-full rounded-lg border border-white/[0.1] bg-obs px-3 py-2.5 text-[13.5px] text-txt focus:border-cy/60" />
+              </div>
+              {errore && <p role="alert" className="text-[12px] text-rd">{errore}</p>}
+              <Bottone type="submit" variante="primario" className="w-full">
+                <Save size={14} /> {account ? 'Aggiorna profilo' : 'Crea profilo'}
+              </Bottone>
+              <p className="text-[11px] leading-snug text-mut">Il profilo e i progetti restano salvati su questo dispositivo, nel browser. Non viene creato alcun account online e non serve una password.</p>
+            </form>
+              </div>
+            ) : (
             <form onSubmit={invia} className="mt-5 space-y-3" noValidate>
               <div>
                 <label htmlFor="acc-nome" className="mb-1 block text-[11.5px] font-medium text-mut">Nome</label>
@@ -121,9 +135,16 @@ export default function Account() {
               </Bottone>
               <p className="text-[11px] leading-snug text-mut">Il profilo e i progetti restano salvati su questo dispositivo, nel browser. Non viene creato alcun account online e non serve una password.</p>
             </form>
+            )}
           </section>
 
-          <SezioneApp />
+          <section className="rounded-2xl border border-cy/25 bg-gradient-to-br from-cy/[0.08] to-transparent p-5" aria-label="Scarica l'app">
+            <h2 className="text-[13.5px] font-semibold text-txt">L’app sul tuo dispositivo</h2>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-mut">Telefono, tablet, Windows, Mac e Linux: scegli il tuo dispositivo nella pagina Scarica.</p>
+            <Bottone variante="primario" className="mt-3" onClick={() => vai('scarica')}>
+              <Download size={14} /> Vai a Scarica
+            </Bottone>
+          </section>
 
           <section className="rounded-2xl glass-solid p-5" aria-label="Preferenze">
             <h2 className="text-[13.5px] font-semibold text-txt">Preferenze</h2>
@@ -153,7 +174,7 @@ export default function Account() {
                 <Download size={14} /> Esporta tutti i dati (JSON)
               </Bottone>
               {account && (
-                <Bottone onClick={() => chiediConferma({ titolo: 'Chiudere la sessione?', testo: 'Il profilo verrà rimosso da questo dispositivo, ma i tuoi progetti resteranno disponibili.', etichetta: 'Esci', onOk: esci })}>
+                <Bottone onClick={() => chiediConferma({ titolo: 'Chiudere la sessione?', testo: 'Il profilo verrà rimosso da questo dispositivo, ma i tuoi progetti resteranno disponibili.', etichetta: 'Esci', onOk: () => { esciDaGoogle(); esci() } })}>
                   <LogOut size={14} /> Esci dal profilo
                 </Bottone>
               )}
@@ -227,6 +248,7 @@ export default function Account() {
           </section>
         </div>
       </div>
+      <MessaggioAggiornamenti className="mt-6" />
     </div>
   )
 }

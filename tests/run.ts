@@ -4,6 +4,7 @@ import { PRESET } from '../src/data/presets'
 import { analizza, conComponente, selezioneVuota, valutaCandidato } from '../src/engine/compat'
 import { corrispondeRicerca, elabora, STATO_INIZIALE } from '../src/engine/catalogo'
 import { CATEGORIE } from '../src/types'
+import { leggiCredenziale } from '../src/lib/google'
 
 let ok = 0
 const test = (nome: string, fn: () => void) => {
@@ -126,6 +127,28 @@ test('elabora: solo compatibili nasconde le CPU incompatibili', () => {
   const esiti = new Map(per('cpu').map((c) => [c.id, valutaCandidato(s, c)]))
   const r = elabora('cpu', { ...STATO_INIZIALE, soloCompatibili: true }, esiti)
   assert.ok(r.length > 0 && r.every((c) => c.socket === 'AM5'))
+})
+
+console.log('Accesso con Google')
+const jwt = (o: object) => `x.${Buffer.from(JSON.stringify(o)).toString('base64url')}.y`
+const CID = 'abc123.apps.googleusercontent.com'
+const buono = { iss: 'https://accounts.google.com', aud: CID, exp: Math.floor(Date.now() / 1000) + 3600, sub: '1', email: 'mario@example.com', email_verified: true, name: 'Mario Rossi', picture: 'https://lh3.googleusercontent.com/a' }
+test('credenziale valida letta correttamente', () => {
+  const p = leggiCredenziale(jwt(buono), CID)
+  assert.equal(p?.email, 'mario@example.com')
+  assert.equal(p?.nome, 'Mario Rossi')
+})
+test('credenziale per un altro client o scaduta è rifiutata', () => {
+  assert.equal(leggiCredenziale(jwt({ ...buono, aud: 'altro' }), CID), null)
+  assert.equal(leggiCredenziale(jwt({ ...buono, exp: 10 }), CID), null)
+  assert.equal(leggiCredenziale(jwt({ ...buono, iss: 'https://evil.example' }), CID), null)
+  assert.equal(leggiCredenziale(jwt({ ...buono, email_verified: false }), CID), null)
+  assert.equal(leggiCredenziale('non-un-token', CID), null)
+})
+test('foto non https ignorata, nome accentato letto bene', () => {
+  const p = leggiCredenziale(jwt({ ...buono, picture: 'http://x/y', name: 'Niccolò Perché' }), CID)
+  assert.equal(p?.foto, undefined)
+  assert.equal(p?.nome, 'Niccolò Perché')
 })
 
 console.log(`\n${ok} test superati${process.exitCode ? ' — CI SONO FALLIMENTI' : ''}`)

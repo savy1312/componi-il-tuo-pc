@@ -18,3 +18,14 @@ Per provarla sul PC: `npm run build && npm run preview`, poi apri http://localho
 (localhost è considerato sicuro, quindi l'installazione funziona anche lì).
 
 Nota: `standalone.html` aperto con doppio clic resta utilizzabile, ma non può essere installato come app.
+
+## 3. Aggiornamenti
+Gli aggiornamenti si fanno dal sito. Ogni pubblicazione genera `version.json`: l'app lo controlla all'avvio e,
+se la versione è cambiata, mostra un avviso con il link alla pagina **Scarica**, dove si preme «Aggiorna ora».
+Per una nuova versione: aumenta `version` in `package.json`, fai commit e push (Vercel ripubblica da solo).
+
+## 4. Accesso con Google
+1. Google Cloud Console → *API e servizi* → *Credenziali* → *Crea credenziali* → **ID client OAuth** → tipo **Applicazione web**.
+2. In *Origini JavaScript autorizzate* inserisci l'indirizzo del sito (es. `https://componi-il-tuo-pc.vercel.app`).
+3. Copia l'ID client e impostalo come variabile `VITE_GOOGLE_CLIENT_ID` (su Vercel: Settings → Environment Variables), poi ripubblica.
+Senza ID il pulsante «Continua con Google» non compare e resta il profilo locale.

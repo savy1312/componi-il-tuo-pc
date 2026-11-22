@@ -7,7 +7,7 @@ export default function ImgComponente({ c, className = '', iconSize = 22 }: { c:
   const url = useMiniatura(c)
   const Icona = META[c.categoria].icona
   return (
-    <div className={`relative grid place-items-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_35%,#434859_0%,#22242d_75%)] ${className}`}>
+    <div className={`relative grid place-items-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_35%,#3a4e92_0%,#121f4a_78%)] ${className}`}>
       {url ? (
         <img src={url} alt={`${c.nome}, immagine 3D`} loading="lazy" draggable={false} className="h-full w-full object-contain anim-fade" />
       ) : (

@@ -51,7 +51,7 @@ export function Modale({ titolo, sottotitolo, onClose, children, larghezza = 'ma
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 anim-fade" role="dialog" aria-modal="true" aria-label={titolo}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div ref={ref} tabIndex={-1} className={`relative flex max-h-[92vh] w-full ${larghezza} flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#121216] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] anim-pop outline-none`}>
+      <div ref={ref} tabIndex={-1} className={`relative flex max-h-[92vh] w-full ${larghezza} flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b1534] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] anim-pop outline-none`}>
         <div className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
           <div className="min-w-0">
             <h2 className="truncate text-[17px] font-semibold tracking-tight text-txt">{titolo}</h2>

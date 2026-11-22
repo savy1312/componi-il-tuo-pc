@@ -82,7 +82,7 @@ function MenuAltro({ children }: { children: (chiudi: () => void) => React.React
         <MoreHorizontal size={14} /> <span className="hidden sm:inline">Altro</span>
       </Bottone>
       {aperto && (
-        <div role="menu" className="absolute right-0 top-full z-50 mt-1.5 w-56 overflow-hidden rounded-xl border border-white/10 bg-[#121216] p-1 shadow-2xl anim-fade">
+        <div role="menu" className="absolute right-0 top-full z-50 mt-1.5 w-56 overflow-hidden rounded-xl border border-white/10 bg-[#0b1534] p-1 shadow-2xl anim-fade">
           {children(() => setAperto(false))}
         </div>
       )}

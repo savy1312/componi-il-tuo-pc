@@ -86,6 +86,7 @@ interface Stato {
   vista: (v: VistaCamera) => void
 
   creaAccount: (nome: string, email: string) => void
+  accediGoogle: (p: { nome: string; email: string; foto?: string }) => void
   aggiornaAccount: (nome: string, email: string) => void
   esci: () => void
   eliminaTutto: () => void
@@ -270,8 +271,13 @@ export const useStore = create<Stato>()(
         vista: (v) => set((s) => ({ vistaReq: { id: s.vistaReq.id + 1, vista: v }, vistaCorrente: v })),
 
         creaAccount: (nome, email) => {
-          set({ account: { nome: nome.trim(), email: email.trim(), creatoIl: new Date().toISOString() } })
+          set({ account: { nome: nome.trim(), email: email.trim(), creatoIl: new Date().toISOString(), provider: 'locale' } })
           get().toast('successo', `Benvenuto, ${nome.trim()}! Il tuo profilo è stato creato.`)
+        },
+        accediGoogle: (g) => {
+          const nuovo = !get().account
+          set((s) => ({ account: { nome: g.nome, email: g.email, foto: g.foto, provider: 'google', creatoIl: s.account?.creatoIl ?? new Date().toISOString() } }))
+          get().toast('successo', nuovo ? `Benvenuto, ${g.nome}! Registrazione con Google completata.` : `Bentornato, ${g.nome}!`)
         },
         aggiornaAccount: (nome, email) => {
           set((s) => (s.account ? { account: { ...s.account, nome: nome.trim(), email: email.trim() } } : {}))

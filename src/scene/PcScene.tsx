@@ -250,7 +250,7 @@ function LimitaPan({ ampio }: { ampio: boolean }) {
 
 /* ------------------------------------------------------------------ scena */
 
-function Effetti({ qualita }: { qualita: string }) {
+export function Effetti({ qualita }: { qualita: string }) {
   if (qualita === 'bassa') return null
   return (
     <EffectComposer multisampling={0} enableNormalPass={false}>
@@ -280,8 +280,8 @@ function Contenuto({ p }: { p: Progetto }) {
 
   return (
     <>
-      <color attach="background" args={[desk ? '#14151a' : '#0b0b0e']} />
-      <fog attach="fog" args={[desk ? '#14151a' : '#0b0b0e', 20, 55]} />
+      <color attach="background" args={[desk ? '#0b1430' : '#060c20']} />
+      <fog attach="fog" args={[desk ? '#0b1430' : '#060c20', 20, 55]} />
       <ambientLight intensity={desk ? 0.5 : 0.4} />
       <hemisphereLight args={['#b4c6e0', '#14141a', 0.55]} />
       <directionalLight position={[6, 12, 9]} intensity={2.4} castShadow={qualita !== 'bassa'} shadow-mapSize={qualita === 'alta' ? [2048, 2048] : [1024, 1024]} shadow-camera-left={-14} shadow-camera-right={14} shadow-camera-top={14} shadow-camera-bottom={-14} shadow-bias={-0.0004} />
@@ -322,7 +322,7 @@ function Contenuto({ p }: { p: Progetto }) {
         <>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, base - 0.01, 0]} receiveShadow>
             <circleGeometry args={[70, 72]} />
-            <meshStandardMaterial color="#17181f" roughness={0.55} metalness={0.35} envMapIntensity={0.6} />
+            <meshStandardMaterial color="#101c42" roughness={0.55} metalness={0.35} envMapIntensity={0.6} />
           </mesh>
           <ContactShadows position={[0, base + 0.005, 0]} scale={18} opacity={0.65} blur={2.6} far={3.5} resolution={qualita === 'bassa' ? 256 : qualita === 'media' ? 512 : 1024} />
         </>

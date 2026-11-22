@@ -1,4 +1,4 @@
-import { Home, LayoutGrid, Monitor, Plus, User } from 'lucide-react'
+import { Download, Home, LayoutGrid, Monitor, Plus, User } from 'lucide-react'
 import { useModoApp } from '../lib/pwa'
 import { useStore } from '../store/useStore'
 import type { Pagina } from '../types'
@@ -8,17 +8,18 @@ const LINK: { id: Pagina; nome: string }[] = [
   { id: 'home', nome: 'Home' },
   { id: 'componenti', nome: 'Componenti' },
   { id: 'pc', nome: 'Il tuo PC' },
+  { id: 'scarica', nome: 'Scarica' },
   { id: 'account', nome: 'Account' },
 ]
 
-const ICONE = { home: Home, componenti: LayoutGrid, pc: Monitor, account: User } as const
+const ICONE = { home: Home, componenti: LayoutGrid, pc: Monitor, scarica: Download, account: User } as const
 
 /** Barra di navigazione in basso, solo quando il sito è installato come app su telefono. */
 export function BarraApp() {
   const pagina = useStore((s) => s.pagina)
   const vai = useStore((s) => s.vai)
   return (
-    <nav aria-label="Navigazione dell'app" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-white/[0.08] bg-[#101014]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+    <nav aria-label="Navigazione dell'app" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/[0.08] bg-[#0a1330]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
       {LINK.map((l) => {
         const I = ICONE[l.id]
         const att = pagina === l.id
@@ -48,7 +49,7 @@ export default function Nav() {
         </button>
 
         {modoApp && <span className={`flex-1 truncate text-[15px] font-semibold ${sovrapposta ? 'text-gray-900' : 'text-txt'}`}>{LINK.find((l) => l.id === pagina)?.nome}</span>}
-        <div className={`${modoApp ? 'hidden' : 'flex'} items-center gap-3 sm:gap-10 rounded-xl px-3.5 sm:px-8 py-2.5 sm:py-3`} style={{ backgroundColor: '#EDEDED' }}>
+        <div className={`${modoApp ? 'hidden' : 'flex'} items-center gap-2.5 sm:gap-8 rounded-xl px-3 sm:px-7 py-2.5 sm:py-3`} style={{ backgroundColor: '#EDEDED' }}>
           {LINK.map((l) => {
             const att = pagina === l.id
             return (

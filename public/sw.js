@@ -1,5 +1,5 @@
 /* Service worker di «Componi il tuo PC»: l'app funziona anche senza connessione. */
-const VERSIONE = 'componi-pc-v2'
+const VERSIONE = 'componi-pc-v3'
 const BASE = self.registration.scope
 const PRECACHE = ['', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png']
 
@@ -25,7 +25,8 @@ self.addEventListener('fetch', (e) => {
   const req = e.request
   if (req.method !== 'GET') return
   const url = new URL(req.url)
-  if (url.origin !== self.location.origin) return // video e risorse esterne: rete normale
+  if (url.origin !== self.location.origin) return // risorse esterne (es. accesso Google): rete normale
+  if (url.pathname.endsWith('/version.json')) return // sempre dalla rete: serve a sapere se c'è un aggiornamento
 
   // pagine: prima la rete (versione aggiornata), poi la copia salvata
   if (req.mode === 'navigate') {

@@ -110,7 +110,7 @@ export function PannelloRgb({ onClose }: { onClose: () => void }) {
     { k: 'dissipatore', nome: 'Dissipatore' },
   ]
   return (
-    <aside className="absolute bottom-3 left-3 border border-white/10 bg-[#121216]/95 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] z-20 flex max-h-[calc(100%-5.5rem)] w-[min(92%,320px)] flex-col rounded-2xl anim-pop" aria-label="Illuminazione RGB">
+    <aside className="absolute bottom-3 left-3 border border-white/10 bg-[#0b1534]/95 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] z-20 flex max-h-[calc(100%-5.5rem)] w-[min(92%,320px)] flex-col rounded-2xl anim-pop" aria-label="Illuminazione RGB">
       <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
         <div className="flex items-center gap-2">
           <Sparkles size={16} className="text-cy" />

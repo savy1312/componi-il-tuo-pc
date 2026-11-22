@@ -7,29 +7,15 @@ import { RGB_DEFAULT } from '../data/palettes'
 import { ex, per } from '../data/hardware'
 import { risolvi } from '../engine/compat'
 import type { Componente } from '../types'
-import { Rb, Tubo, Ventola } from './gfx'
+import { Ventola } from './gfx'
 import type { V3 } from './gfx'
+import { ImmagineCavo } from './immaginiCavi'
 import { geometria } from './layout'
-import { Aio, Aria, Cpu, Gpu, Guscio, Psu, Ram, SchedaMadre, Ssd, colore } from './parts'
+import { Aio, Aria, Cpu, Gpu, Guscio, Psu, Ram, SchedaMadre, Ssd } from './parts'
 import { selezioneVuota } from '../engine/compat'
 import { cache, coda, inCoda, iscrivi, avvisa } from './miniatureStore'
 
 /* -------------------------------------------------------------- scena demo */
-
-const Cavetti = ({ c }: { c: Componente }) => {
-  const col = colore(c.colore, '#1a1a1e')
-  const arco = (y: number, z: number): V3[] => [[-1.6, y, z], [-0.7, y + 0.5, z + 0.2], [0.7, y + 0.5, z - 0.2], [1.6, y, z]]
-  return (
-    <group>
-      {[0, 0.16, 0.32].map((d, i) => (
-        <Tubo key={i} pts={arco(d, i * 0.04)} r={0.07} color={col} righe rough={0.6} seg={32} />
-      ))}
-      {[-1.6, 1.6].map((x) =>
-        [0, 0.16, 0.32].map((d, i) => <Rb key={`${x}-${i}`} size={[0.12, 0.14, 0.2]} pos={[x + (x < 0 ? -0.05 : 0.05), d, i * 0.04]} raggio={0.02} color="#2a2b31" metal={0.2} rough={0.6} />),
-      )}
-    </group>
-  )
-}
 
 interface Demo {
   node: ReactNode
@@ -78,14 +64,14 @@ function creaDemo(c: Componente): Demo {
       }
     }
     default:
-      return { node: <Cavetti c={c} />, dir: [-0.2, 0.7, 1] }
+      return { node: <ImmagineCavo c={c} />, dir: [-0.15, 0.5, 1] }
   }
 }
 
 /* ------------------------------------------------------------- generatore */
 
-const L = 280
-const A = 210
+const L = 400
+const A = 300
 
 function Lavoro({ c, fine }: { c: Componente; fine: (id: string, url: string) => void }) {
   const gruppo = useRef<THREE.Group>(null)

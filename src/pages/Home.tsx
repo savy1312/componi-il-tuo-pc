@@ -1,15 +1,14 @@
-import { ArrowRight, CheckCircle2, Layers3, ListChecks, Sparkles, Wand2 } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Download, Layers3, ListChecks, ShieldCheck, Sparkles, Wand2 } from 'lucide-react'
 import { PRESET } from '../data/presets'
 import { HARDWARE } from '../data/hardware'
 import { analizza } from '../engine/compat'
 import { euro } from '../lib/format'
-import { useInstallazione } from '../lib/pwa'
+import { MessaggioAggiornamenti } from '../ui/Aggiornamenti'
 import { useStore } from '../store/useStore'
 import { Badge, tonoBuild } from '../ui/base'
-import { useEffect, useMemo, useRef, useState } from 'react'
-
-const VIDEO_URL =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_215831_c6a8989c-d716-4d8d-8745-e972a2eec711.mp4'
+import { Component, lazy, Suspense, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
+import type { StatoHero } from '../scene/HeroPc'
 
 const PASSI = [
   { n: '1', t: 'Scegli un punto di partenza', d: 'Parti da un PC già pronto oppure da zero: puoi cambiare tutto quando vuoi.' },
@@ -17,109 +16,136 @@ const PASSI = [
   { n: '3', t: 'Guardalo in 3D ed esportalo', d: 'Ogni componente compare subito nel PC virtuale. Gli errori di compatibilità ti vengono segnalati in automatico. Alla fine salvi, condividi o esporti.' },
 ]
 
-/** Illustrazione di riserva quando il video non può essere caricato (rete lenta, risparmio dati, blocchi). */
-function SfondoRiserva() {
+const HeroPc = lazy(() => import('../scene/HeroPc'))
+
+/** Se il 3D non può partire (dispositivo molto vecchio) mostra un'illustrazione al suo posto. */
+class ProteggiHero extends Component<{ children: ReactNode }, { ko: boolean }> {
+  state = { ko: false }
+  static getDerivedStateFromError() {
+    return { ko: true }
+  }
+  render() {
+    return this.state.ko ? <Illustrazione /> : this.props.children
+  }
+}
+
+function Illustrazione() {
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[radial-gradient(ellipse_at_50%_30%,#ffffff_0%,#e9ebef_55%,#dfe2e8_100%)]" aria-hidden="true">
-      <svg viewBox="0 0 400 420" className="absolute left-1/2 top-[11%] h-[38%] max-h-[420px] -translate-x-1/2 drop-shadow-[0_30px_40px_rgba(15,23,42,0.25)] sm:top-[8%] sm:h-[58%]" fill="none">
-        <defs>
-          <linearGradient id="vetro" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#2a2f3a" />
-            <stop offset="1" stopColor="#12141a" />
-          </linearGradient>
-          <radialGradient id="luce" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0" stopColor="#22d3ee" stopOpacity="0.55" />
-            <stop offset="1" stopColor="#22d3ee" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <rect x="90" y="20" width="220" height="360" rx="18" fill="#1b1d24" stroke="#c8ccd4" strokeWidth="3" />
-        <rect x="104" y="34" width="192" height="262" rx="10" fill="url(#vetro)" stroke="#22d3ee" strokeOpacity="0.5" />
-        <circle cx="200" cy="120" r="90" fill="url(#luce)" />
-        {[96, 176, 256].map((y) => (
-          <g key={y} transform={`translate(262 ${y - 10})`}>
-            <circle r="30" stroke="#22d3ee" strokeWidth="3" />
-            <circle r="5" fill="#e5e7eb" />
-            {[0, 72, 144, 216, 288].map((a) => (
-              <path key={a} d="M0 0 Q 16 -8 26 -20" stroke="#22d3ee" strokeWidth="3" strokeLinecap="round" transform={`rotate(${a})`} />
-            ))}
-          </g>
-        ))}
-        <rect x="128" y="64" width="64" height="44" rx="6" fill="#0f1116" stroke="#475569" />
-        <rect x="136" y="72" width="48" height="28" rx="3" fill="#334155" />
-        <rect x="128" y="130" width="86" height="34" rx="6" fill="#0f1116" stroke="#475569" />
-        {[0, 1, 2, 3].map((i) => (
-          <rect key={i} x={138 + i * 14} y="138" width="8" height="18" rx="2" fill="#22d3ee" opacity="0.85" />
-        ))}
-        <rect x="124" y="196" width="130" height="30" rx="8" fill="#0f1116" stroke="#475569" />
-        <rect x="104" y="306" width="192" height="60" rx="8" fill="#14161c" stroke="#2f3541" />
-        <rect x="120" y="322" width="90" height="10" rx="3" fill="#2f3541" />
-        <rect x="116" y="380" width="20" height="14" rx="4" fill="#9aa1ad" />
-        <rect x="264" y="380" width="20" height="14" rx="4" fill="#9aa1ad" />
-      </svg>
+    <div className="absolute inset-0 grid place-items-center">
+      <img src="icons/icon-512.png" alt="Un PC in 3D con i suoi componenti" className="w-[62%] max-w-[360px] rounded-[22%] shadow-[0_30px_80px_-20px_rgba(34,211,238,0.5)]" />
+    </div>
+  )
+}
+
+const MESSAGGI: Record<StatoHero['fase'], string> = {
+  assembla: 'Ecco un PC: guarda come si monta…',
+  smonta: 'Lo smontiamo, per farti vedere ogni pezzo',
+  tour: '',
+  rimonta: 'Ora lo rimontiamo…',
+  gira: 'Pronto!',
+  fine: 'Questo è un PC completo. Ora tocca a te: componi il tuo!',
+}
+
+function DidascaliaHero({ s }: { s: StatoHero }) {
+  const passo = s.fase === 'tour' && s.info
+  return (
+    <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 flex justify-center sm:inset-x-6 sm:bottom-6" aria-live="polite">
+      <div key={passo ? s.passo : s.fase} className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b1534]/80 p-4 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)] backdrop-blur-md anim-pop">
+        {passo && s.info ? (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-cy">
+                Componente {s.passo + 1} di {s.totale}
+              </p>
+              <div className="flex gap-1" aria-hidden="true">
+                {Array.from({ length: s.totale }, (_, i) => (
+                  <span key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === s.passo ? 'w-4 bg-cy' : i < s.passo ? 'w-1.5 bg-cy/50' : 'w-1.5 bg-white/20'}`} />
+                ))}
+              </div>
+            </div>
+            <h2 className="mt-1.5 text-[17px] font-semibold leading-tight text-txt">{s.info.titolo}</h2>
+            <p className="mt-0.5 text-[12.5px] font-medium text-cy/90">{s.info.nome}</p>
+            <p className="mt-1 text-[13px] leading-snug text-mut">{s.info.testo}</p>
+          </>
+        ) : (
+          <p className="text-center text-[14px] font-medium text-txt">{MESSAGGI[s.fase]}</p>
+        )}
+      </div>
     </div>
   )
 }
 
 export default function Home() {
-  const [videoKo, setVideoKo] = useState(false)
-  const video = useRef<HTMLVideoElement>(null)
-  // se dopo qualche secondo il video non è partito (rete lenta o bloccato) mostra l'illustrazione
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const v = video.current
-      if (!v || v.readyState < 2) setVideoKo(true)
-    }, 4000)
-    return () => clearTimeout(t)
-  }, [])
-
   const vai = useStore((s) => s.vai)
   const apri = useStore((s) => s.apriModale)
-  const creaProgetto = useStore((s) => s.creaProgetto)
   const projects = useStore((s) => s.projects)
-  const { puoiInstallare, installa } = useInstallazione()
+  const creaProgetto = useStore((s) => s.creaProgetto)
   const vetrina = useMemo(() => PRESET.slice(0, 6).map((x) => ({ x, a: analizza(x.sel) })), [])
+  const [hero, setHero] = useState<StatoHero>({ fase: 'assembla', passo: 0, totale: 10 })
 
   return (
-    <div className="bg-obs">
+    <div>
       {/* ---------------------------------------------------------- hero */}
-      <div className="relative min-h-screen overflow-hidden bg-[#f0f0ee]">
-        {videoKo && <SfondoRiserva />}
-        <video ref={video} className={`absolute inset-0 w-full h-full object-cover ${videoKo ? 'hidden' : ''}`} src={VIDEO_URL} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" onError={() => setVideoKo(true)} />
+      <section className="relative isolate overflow-hidden bg-[#071029]" aria-label="Presentazione">
+        <div className="pointer-events-none absolute -left-40 top-10 h-[480px] w-[480px] rounded-full bg-cy/10 blur-[120px]" aria-hidden="true" />
+        <div className="pointer-events-none absolute -right-32 top-0 h-[520px] w-[520px] rounded-full bg-ind/20 blur-[130px]" aria-hidden="true" />
 
-        <div className="relative z-10 flex flex-col min-h-screen">
-          <div className="h-[72px] sm:h-[84px]" aria-hidden="true" />
-
-          <div className="flex-1 flex items-end pb-10 sm:pb-16 lg:pb-20 px-6 sm:px-12 md:px-20 lg:px-28">
-            <div className="max-w-xs">
-              <button type="button" onClick={() => vai('componenti')} className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-blue-500 hover:text-blue-600 transition-colors mb-3 group">
-                Oltre {HARDWARE.length} componenti con compatibilità automatica
-                <span className="inline-block transition-transform duration-200 group-hover:translate-x-0.5">→</span>
-              </button>
-
-              <h1 className="text-[1.5rem] sm:text-[1.75rem] leading-[1.15] font-medium text-gray-900 tracking-tight mb-3">Componi il tuo PC ideale e guardalo prendere forma in 3D.</h1>
-
-              <p className="text-[13px] text-gray-400 font-normal mb-3">Scegli ogni pezzo, controlla la compatibilità e condividi la tua build.</p>
-
-              <button
-                type="button"
-                onClick={() => (projects.length ? vai('pc') : apri('nuovo', true))}
-                className="inline-flex items-center gap-2 text-[13px] font-medium text-blue-500 border border-blue-400 rounded-full px-5 py-2.5 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-200 group"
+        <div className="mx-auto grid min-h-[100svh] max-w-7xl grid-rows-[auto_auto] items-center gap-0 px-0 pt-[76px] sm:pt-[92px] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:grid-rows-1 lg:pt-0">
+          {/* 3D */}
+          <div className="relative order-1 h-[56svh] min-h-[340px] lg:order-2 lg:h-[100svh]">
+            <ProteggiHero>
+              <Suspense
+                fallback={
+                  <div className="absolute inset-0 grid place-items-center">
+                    <div className="h-9 w-9 rounded-full border-2 border-white/10 border-t-cy anim-spin" role="status" aria-label="Preparo il PC in 3D" />
+                  </div>
+                }
               >
-                {projects.length ? 'Continua il tuo progetto' : 'Inizia a comporre'}
-                <span className="inline-block transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+                <div className="absolute inset-0">
+                  <HeroPc onStato={setHero} />
+                </div>
+              </Suspense>
+            </ProteggiHero>
+            <DidascaliaHero s={hero} />
+          </div>
+
+          {/* testo */}
+          <div className="relative z-10 order-2 px-5 pb-12 pt-6 sm:px-10 lg:order-1 lg:px-12 lg:pb-0 lg:pt-24">
+            <p className="inline-flex items-center gap-1.5 rounded-full border border-cy/30 bg-cy/10 px-3 py-1 text-[12px] font-medium text-cy">
+              <ShieldCheck size={13} /> Gratis · senza registrazione
+            </p>
+            <h1 className="mt-4 text-[2rem] font-semibold leading-[1.1] tracking-tight text-txt sm:text-[2.6rem] lg:text-[3rem]">
+              Costruisci il tuo PC,
+              <span className="block bg-gradient-to-r from-cy to-ind bg-clip-text text-transparent">pezzo dopo pezzo, in 3D.</span>
+            </h1>
+            <p className="mt-4 max-w-md text-[15px] leading-relaxed text-mut">Ti guidiamo passo dopo passo, anche se non hai mai montato un PC. Controlliamo noi che tutto sia compatibile.</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={() => (projects.length ? vai('pc') : apri('nuovo', true))} className="inline-flex items-center gap-2 rounded-full bg-cy px-6 py-3.5 text-[15px] font-semibold text-obs shadow-[0_10px_40px_-10px_rgba(34,211,238,0.8)] transition-all hover:bg-[#5fe3f5] active:scale-[0.98]">
+                {projects.length ? 'Continua il tuo progetto' : 'Inizia a comporre'} <ArrowRight size={17} />
               </button>
-              <button type="button" onClick={() => apri('preset', true)} className="ml-2 mt-2 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-gray-500 underline-offset-4 hover:text-gray-900 hover:underline">
-                oppure parti da un PC pronto
+              <button type="button" onClick={() => apri('preset', true)} className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-3.5 text-[14px] font-medium text-txt transition-colors hover:border-cy/50 hover:text-cy">
+                <Sparkles size={15} /> Parti da un PC pronto
               </button>
-              {puoiInstallare && (
-                <button type="button" onClick={installa} className="mt-3 block text-[12.5px] font-medium text-gray-500 underline-offset-4 hover:text-gray-900 hover:underline">
-                  Installa l’app sul telefono
-                </button>
-              )}
             </div>
+            <button type="button" onClick={() => vai('scarica')} className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-mut underline-offset-4 hover:text-txt hover:underline">
+              <Download size={14} /> Scarica l’app per telefono e computer
+            </button>
+            <ul className="mt-8 grid max-w-md grid-cols-3 gap-3 text-[12px] text-mut">
+              {[
+                ['1', 'Scegli i pezzi'],
+                ['2', 'Guardalo in 3D'],
+                ['3', 'Salva ed esporta'],
+              ].map(([n, t]) => (
+                <li key={n} className="flex items-center gap-2">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10 text-[11px] font-bold text-txt">{n}</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-      </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-[#060c20]" aria-hidden="true" />
+      </section>
 
       {/* ------------------------------------------------------ da dove iniziare */}
       <section className="mx-auto max-w-6xl px-5 pb-6 pt-16 sm:px-8" aria-labelledby="inizio">
@@ -199,6 +225,10 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <div className="mx-auto max-w-3xl px-5 pb-8 sm:px-8">
+        <MessaggioAggiornamenti />
+      </div>
 
       <footer className="border-t border-white/[0.05] px-5 py-8 text-center text-[11.5px] leading-relaxed text-mut sm:px-8">
         <p>Componi il tuo PC · Prezzi e specifiche sono indicativi e possono variare. Marchi e nomi appartengono ai rispettivi proprietari.</p>
