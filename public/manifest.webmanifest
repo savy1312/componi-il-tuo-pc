@@ -1,0 +1,24 @@
+{
+  "name": "Componi il tuo PC",
+  "short_name": "Componi PC",
+  "description": "Crea il tuo PC componente per componente e guardalo in 3D, con controllo di compatibilità.",
+  "lang": "it",
+  "dir": "ltr",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0c",
+  "theme_color": "#0a0a0c",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Il tuo PC", "short_name": "Il tuo PC", "url": "./?vai=pc", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Componenti", "short_name": "Componenti", "url": "./?vai=componenti", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
