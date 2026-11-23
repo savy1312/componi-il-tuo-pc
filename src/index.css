@@ -14,7 +14,41 @@
   --color-am: #f59e0b;
   --color-rd: #ef4444;
   --color-ind: #6366f1;
+  /* ---- design tokens: forme, ombre, movimento, layout ---- */
+  --radius-ctrl: 0.5rem;
+  --radius-card: 1rem;
+  --radius-panel: 1.25rem;
+  --shadow-panel: 0 20px 50px -20px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 0 1px rgba(34, 211, 238, 0.35), 0 8px 30px -8px rgba(34, 211, 238, 0.5);
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --font-mono: ui-monospace, "JetBrains Mono", "IBM Plex Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* token di movimento, layout e accessibilità (usabili con var(--...)) */
+:root {
+  --durata-rapida: 120ms;
+  --durata-base: 200ms;
+  --durata-lenta: 400ms;
+  --barra-alta: 3rem;
+  --colonna-sx: 340px;
+  --colonna-dx: 330px;
+  --colonna-compressa: 44px;
+  --anello-focus: 0 0 0 2px #060c20, 0 0 0 4px #22d3ee;
+  --z-scena-ui: 10;
+  --z-pannelli: 20;
+  --z-menu: 50;
+  --z-modali: 60;
+}
+
+/* alta leggibilità: testi secondari più chiari e bordi più netti */
+@media (prefers-contrast: more) {
+  :root {
+    --color-mut: #c9d6f2;
+  }
+  .glass,
+  .glass-solid {
+    border-color: rgba(255, 255, 255, 0.35) !important;
+  }
 }
 
 html,

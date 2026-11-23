@@ -9,7 +9,7 @@ import { uid } from '../lib/format'
 import type { BuildImportata } from '../lib/share'
 import type { Account, Categoria, Componente, ImpostazioniRgb, Pagina, Progetto } from '../types'
 
-export type VistaCamera = 'reset' | 'frontale' | 'interno' | 'scheda-madre' | 'psu' | 'ventole' | 'gpu' | 'ram' | 'dissipatore' | 'ssd'
+export type VistaCamera = 'reset' | 'frontale' | 'laterale' | 'posteriore' | 'alto' | 'cablaggio' | 'interno' | 'scheda-madre' | 'psu' | 'ventole' | 'gpu' | 'ram' | 'dissipatore' | 'ssd'
 
 export interface Toast {
   id: number
@@ -26,13 +26,24 @@ export interface Conferma {
   onOk: () => void
 }
 
+export type Evidenziazione = 'nessuna' | 'compatibilita' | 'consigliato' | 'premium' | 'budget' | 'silenzioso' | 'rgb'
+export type ModoVista = 'normale' | 'wireframe' | 'componenti' | 'solo-pc'
+
 export interface Preferenze {
   soloCompatibili: boolean
   autoRotazione: boolean
   vetro: boolean
-  qualita?: 'alta' | 'media' | 'bassa'
+  qualita?: 'bassa' | 'media' | 'alta' | 'ultra' | '4k'
   qualitaManuale?: boolean
   ambiente?: 'studio' | 'scrivania'
+  /** Mostra FPS e statistiche sopra la scena. */
+  prestazioni?: boolean
+  /** Modalità prestazioni: meno effetti, più fluidità. */
+  risparmio?: boolean
+  /** Cosa mostra il monitor nella postazione. */
+  schermo?: 'monitoraggio' | 'desktop' | 'sfondo' | 'spento'
+  /** Immagine di sfondo scelta dall'utente (ridimensionata, salvata sul dispositivo). */
+  sfondoSchermo?: string
 }
 
 interface Stato {
@@ -52,6 +63,13 @@ interface Stato {
   toasts: Toast[]
   vistaCorrente: VistaCamera
   modoCamera: 'orbita' | 'pan'
+  /** Componente 3D selezionato con un clic sulla scena. */
+  selezionato: Categoria | null
+  setSelezionato: (c: Categoria | null) => void
+  evidenzia: Evidenziazione
+  setEvidenzia: (e: Evidenziazione) => void
+  modoVista: ModoVista
+  setModoVista: (m: ModoVista) => void
   setModoCamera: (m: 'orbita' | 'pan') => void
 
   vai: (p: Pagina) => void
@@ -125,6 +143,12 @@ export const useStore = create<Stato>()(
         vistaReq: { id: 0, vista: 'reset' },
         vistaCorrente: 'reset',
         modoCamera: 'orbita',
+        selezionato: null,
+        setSelezionato: (c) => set({ selezionato: c }),
+        evidenzia: 'nessuna',
+        setEvidenzia: (e) => set({ evidenzia: e }),
+        modoVista: 'normale',
+        setModoVista: (m) => set({ modoVista: m }),
         setModoCamera: (m) => set({ modoCamera: m }),
         toasts: [],
 
@@ -173,7 +197,7 @@ export const useStore = create<Stato>()(
           get().toast('successo', `Build condivisa "${p.nome}" caricata.`)
           return p.id
         },
-        setAttivo: (id) => set({ activeId: id, esploso: false }),
+        setAttivo: (id) => set({ activeId: id, esploso: false, selezionato: null }),
         eliminaProgetto: (id) => {
           const nome = get().projects.find((p) => p.id === id)?.nome
           set((s) => {

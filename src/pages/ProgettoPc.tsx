@@ -1,4 +1,4 @@
-import { Box, Copy, Download, FolderOpen, Layers3, LayoutGrid, Link2, MoreHorizontal, Plus, RotateCcw, Save, Sparkles } from 'lucide-react'
+import { Box, ChevronLeft, ChevronRight, Copy, Download, FolderOpen, Gauge, Layers3, LayoutGrid, Link2, Maximize2, Minimize2, MoreHorizontal, Plus, RotateCcw, Save, Sparkles, Zap } from 'lucide-react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { META } from '../data/categorie'
 import { ex, trova } from '../data/hardware'
@@ -10,7 +10,10 @@ import { useProgettoAttivo, useStore } from '../store/useStore'
 import { Badge, Bottone, Interruttore, Vuoto, tonoBuild, tonoCategoria } from '../ui/base'
 import { Catalogo } from '../ui/Catalogo'
 import { BannerGuida, ElencoPassi } from '../ui/Percorso'
+import BarraInferiore from '../ui/BarraInferiore'
 import { BarraCamera, PannelloDestro, PannelloRgb } from '../ui/pannelli'
+import { PannelloPrestazioni } from '../ui/Qualita'
+import { LegendaEvidenzia, SchedaSelezione, TooltipScena } from '../ui/ScenaOverlay'
 
 const PcScene = lazy(() => import('../scene/PcScene'))
 
@@ -108,14 +111,35 @@ export default function ProgettoPc() {
   const apri = useStore((s) => s.apriModale)
   const duplica = useStore((s) => s.duplicaProgetto)
   const resetBuild = useStore((s) => s.resetBuild)
+  const esploso = useStore((s) => s.esploso)
+  const toggleEsploso = useStore((s) => s.toggleEsploso)
   const chiediConferma = useStore((s) => s.chiediConferma)
   const toast = useStore((s) => s.toast)
   const categoria = useStore((s) => s.categoria)
   const setMiniatura = useStore((s) => s.setMiniatura)
   const setGpuVerticale = useStore((s) => s.setGpuVerticale)
+  const pref = useStore((s) => s.pref)
   const [tab, setTab] = useState<Tab>(() => (typeof window !== 'undefined' && window.innerWidth < 1024 ? 'componenti' : 'scena'))
   const [rgbAperto, setRgbAperto] = useState(false)
+  const [sxAperta, setSxAperta] = useState(true)
+  const [dxAperta, setDxAperta] = useState(true)
+  const [schermoIntero, setSchermoIntero] = useState(false)
+  const setPref = useStore((s) => s.setPref)
+  useEffect(() => {
+    const f = () => setSchermoIntero(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', f)
+    return () => document.removeEventListener('fullscreenchange', f)
+  }, [])
+  const pieno = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen()
+      else await document.documentElement.requestFullscreen()
+    } catch {
+      toast('info', 'Il tuo browser non permette lo schermo intero qui.')
+    }
+  }
   const largo = useMediaQuery('(min-width: 1024px)')
+  const xl = useMediaQuery('(min-width: 1280px)')
   const [nome, setNome] = useState(p?.nome ?? '')
   const idRef = useRef(p?.id)
 
@@ -191,6 +215,20 @@ export default function ProgettoPc() {
           {!p.salvato && <span className="text-[11px] text-am sm:hidden">● Non salvato</span>}
         </div>
         <div className="ml-auto flex items-center gap-1.5">
+          <div className="mr-1 hidden items-center gap-1 lg:flex" role="group" aria-label="Opzioni della scena">
+            {([
+              [rgbAperto, () => setRgbAperto((v) => !v), 'Illuminazione RGB', <Zap key="z" size={14} />],
+              [esploso, toggleEsploso, 'Vista esplosa', <Layers3 key="l" size={14} />],
+              [pref.ambiente === 'scrivania', () => setPref({ ambiente: pref.ambiente === 'scrivania' ? 'studio' : 'scrivania' }), 'Postazione completa', <Box key="b" size={14} />],
+              [!!pref.risparmio, () => setPref({ risparmio: !pref.risparmio }), pref.risparmio ? 'Modalità prestazioni attiva (max qualità Media)' : 'Modalità prestazioni: più fluidità, meno effetti', <Gauge key="g" size={14} />],
+              [!!pref.prestazioni, () => setPref({ prestazioni: !pref.prestazioni }), 'Mostra FPS e statistiche', <Sparkles key="s" size={14} />],
+              [schermoIntero, () => void pieno(), schermoIntero ? 'Esci dallo schermo intero' : 'Schermo intero', schermoIntero ? <Minimize2 key="m" size={14} /> : <Maximize2 key="m" size={14} />],
+            ] as const).map(([att, fn, tit, ico]) => (
+              <button key={tit} type="button" onClick={fn} aria-pressed={att} aria-label={tit} title={tit} className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors ${att ? 'border-cy/50 bg-cy/15 text-cy' : 'border-white/[0.08] text-mut hover:border-white/20 hover:text-txt'}`}>
+                {ico}
+              </button>
+            ))}
+          </div>
           <Bottone piccolo onClick={salva} variante={p.salvato ? 'secondario' : 'successo'} aria-label="Salva il progetto">
             <Save size={13} /> <span className="hidden sm:inline">{p.salvato ? 'Salvata' : 'Salva'}</span>
           </Bottone>
@@ -213,9 +251,19 @@ export default function ProgettoPc() {
       {Tabs}
 
       {/* --------------------------------------------------------- 3 colonne */}
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[340px_minmax(0,1fr)_330px] xl:grid-cols-[380px_minmax(0,1fr)_340px]">
+      <div className="grid min-h-0 flex-1 transition-[grid-template-columns] duration-300 lg:[grid-template-columns:var(--cols)]" style={{ ['--cols' as string]: `${sxAperta ? (xl ? '380px' : '340px') : '44px'} minmax(0,1fr) ${dxAperta ? (xl ? '340px' : '330px') : '44px'}` }}>
         {/* sinistra: categorie e catalogo */}
-        <section aria-label="Catalogo componenti" className={`${tab === 'componenti' ? 'flex' : 'hidden'} min-h-0 flex-col border-r border-white/[0.06] bg-ant/60 px-3 pb-0 pt-3 lg:flex`}>
+        {largo && !sxAperta && (
+          <button type="button" onClick={() => setSxAperta(true)} aria-label="Mostra il catalogo" title="Mostra il catalogo" className="flex flex-col items-center gap-3 border-r border-white/[0.06] bg-ant/60 pt-4 text-mut transition-colors hover:text-cy">
+            <ChevronRight size={16} />
+            <LayoutGrid size={16} />
+            <span className="[writing-mode:vertical-rl] text-[11px] font-medium tracking-wide">Componenti</span>
+          </button>
+        )}
+        <section aria-label="Catalogo componenti" className={`${tab === 'componenti' ? 'flex' : 'hidden'} min-h-0 flex-col border-r border-white/[0.06] bg-ant/60 px-3 pb-0 pt-3 ${sxAperta ? 'lg:flex' : 'lg:hidden'}`}>
+          <button type="button" onClick={() => setSxAperta(false)} aria-label="Comprimi il catalogo" title="Comprimi il catalogo" className="mb-1 ml-auto hidden items-center gap-1 text-[11px] text-mut transition-colors hover:text-cy lg:flex">
+            <ChevronLeft size={14} /> Comprimi
+          </button>
           <ElencoPassi />
           <div className="mt-3">
             <BannerGuida onVaiAlRiepilogo={() => setTab('riepilogo')} />
@@ -247,6 +295,10 @@ export default function ProgettoPc() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(10,10,12,0.55)_100%)]" />
           <BarraCamera onRgb={() => setRgbAperto((v) => !v)} rgbAperto={rgbAperto} />
           {rgbAperto && <PannelloRgb onClose={() => setRgbAperto(false)} />}
+          <LegendaEvidenzia />
+          <TooltipScena />
+          <SchedaSelezione onSostituisci={() => setTab('componenti')} />
+          {pref.prestazioni && <PannelloPrestazioni />}
           {!p.sel.case && (
             <div className="pointer-events-none absolute inset-x-0 bottom-16 z-10 flex justify-center px-4">
               <div className="glass rounded-xl px-4 py-2.5 text-center text-[12.5px] text-mut anim-fade">
@@ -254,14 +306,25 @@ export default function ProgettoPc() {
               </div>
             </div>
           )}
-          <p className="pointer-events-none absolute bottom-3 right-4 hidden text-[11px] text-mut/80 sm:block">Trascina per ruotare · Rotellina per lo zoom · Tasto destro per spostare</p>
+          <p className="pointer-events-none absolute bottom-3 right-4 hidden text-[11px] text-mut/80 xl:block">Trascina per ruotare · Rotellina per lo zoom · Tasto destro per spostare</p>
         </section>
 
         {/* destra: riepilogo, telemetria, compatibilità */}
-        <section aria-label="Riepilogo build" className={`${tab === 'riepilogo' ? 'block' : 'hidden'} min-h-0 border-l border-white/[0.06] bg-ant/60 lg:block`}>
+        {largo && !dxAperta && (
+          <button type="button" onClick={() => setDxAperta(true)} aria-label="Mostra il riepilogo" title="Mostra il riepilogo" className="flex flex-col items-center gap-3 border-l border-white/[0.06] bg-ant/60 pt-4 text-mut transition-colors hover:text-cy">
+            <ChevronLeft size={16} />
+            <Layers3 size={16} />
+            <span className="[writing-mode:vertical-rl] text-[11px] font-medium tracking-wide">Riepilogo</span>
+          </button>
+        )}
+        <section aria-label="Riepilogo build" className={`${tab === 'riepilogo' ? 'block' : 'hidden'} min-h-0 border-l border-white/[0.06] bg-ant/60 ${dxAperta ? 'lg:block' : 'lg:hidden'}`}>
+          <button type="button" onClick={() => setDxAperta(false)} aria-label="Comprimi il riepilogo" title="Comprimi il riepilogo" className="ml-auto mr-3 mt-2 hidden items-center gap-1 text-[11px] text-mut transition-colors hover:text-cy lg:flex">
+            Comprimi <ChevronRight size={14} />
+          </button>
           <PannelloDestro a={a} onEsporta={() => apri('esporta', true)} />
         </section>
       </div>
+      <BarraInferiore rgbAperto={rgbAperto} onRgb={() => setRgbAperto((v) => !v)} />
     </div>
   )
 }

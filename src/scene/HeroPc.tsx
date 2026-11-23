@@ -5,10 +5,11 @@ import * as THREE from 'three'
 import { PRESET } from '../data/presets'
 import { trova } from '../data/hardware'
 import { risolvi } from '../engine/compat'
-import { qualitaEffettiva } from '../lib/qualita'
+import { useQualita } from '../lib/qualita'
 import { useStore } from '../store/useStore'
 import type { Categoria, Componente, Progetto } from '../types'
 import { geometria } from './layout'
+import { catDaChiave } from './categorieParti'
 import { Effetti, costruisciParti } from './PcScene'
 
 /* --------------------------------------------------------- contenuti del tour */
@@ -31,20 +32,6 @@ const DESCRIZIONI: Record<string, { titolo: string; testo: string }> = {
   alimentatore: { titolo: 'L’alimentatore', testo: 'Dà energia a tutto il PC in modo stabile.' },
   ventole: { titolo: 'Le ventole', testo: 'Spingono aria fresca dentro e portano via il calore.' },
   cavi: { titolo: 'I cavi', testo: 'Portano corrente e dati ai componenti, in modo ordinato.' },
-}
-
-const catDaChiave = (k: string): Categoria | null => {
-  if (k.startsWith('case-') || k.startsWith('cop-')) return 'case'
-  if (k.startsWith('mb-')) return 'scheda-madre'
-  if (k.startsWith('cpu-')) return 'cpu'
-  if (k.startsWith('cool-')) return 'dissipatore'
-  if (k.startsWith('ram-')) return 'ram'
-  if (k.startsWith('gpu-')) return 'gpu'
-  if (k.startsWith('ssd-')) return 'ssd'
-  if (k.startsWith('psu-')) return 'alimentatore'
-  if (k.startsWith('cavi-')) return 'cavi'
-  if (k.startsWith('ven-')) return 'ventole'
-  return null
 }
 
 export type FaseHero = 'assembla' | 'smonta' | 'tour' | 'rimonta' | 'gira' | 'fine'
@@ -127,7 +114,7 @@ function Parte({ esplosione, cat, focus, cond, children }: { esplosione: [number
 
 /* ---------------------------------------------------------------- la scena */
 
-function Scena({ passi, onStato, ridotto, qualita }: { passi: PassoTour[]; onStato: (s: StatoHero) => void; ridotto: boolean; qualita: 'alta' | 'media' | 'bassa' }) {
+function Scena({ passi, onStato, ridotto, qualita }: { passi: PassoTour[]; onStato: (s: StatoHero) => void; ridotto: boolean; qualita: 'media' | 'bassa' }) {
   const { camera, size, invalidate } = useThree()
   const cond = useRef<Cond>({ esp: ridotto ? 0 : 1.6, ang: ridotto ? ANGOLO_FINALE : 0, stato: { fase: ridotto ? 'fine' : 'assembla', passo: 0, totale: passi.length } })
   const t0 = useRef(0)
@@ -301,8 +288,8 @@ function Scena({ passi, onStato, ridotto, qualita }: { passi: PassoTour[]; onSta
 export default function HeroPc({ onStato }: { onStato: (s: StatoHero) => void }) {
   const pref = useStore((s) => s.pref)
   // sullo sfondo della Home non servono gli effetti più pesanti: al massimo «media»
-  const q = qualitaEffettiva(pref)
-  const qualita = q === 'alta' ? 'media' : q
+  const q = useQualita(pref)
+  const qualita: 'media' | 'bassa' = q === 'bassa' ? 'bassa' : 'media'
   const ridotto = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const [fermo, setFermo] = useState(false)
 

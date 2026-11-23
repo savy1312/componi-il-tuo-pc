@@ -7,7 +7,8 @@ import { PALETTE, EFFETTI, coloriDi } from '../data/palettes'
 import { ETICHETTE_CATEGORIA } from '../engine/compat'
 import type { Analisi } from '../engine/compat'
 import { euro } from '../lib/format'
-import { qualitaEffettiva } from '../lib/qualita'
+import { MenuQualita } from './Qualita'
+import { MenuVista } from './ScenaOverlay'
 import { cameraApi } from '../scene/sceneApi'
 import { useProgettoAttivo, useStore } from '../store/useStore'
 import type { VistaCamera } from '../store/useStore'
@@ -21,6 +22,9 @@ import { idsInCategoria } from './Catalogo'
 const VISTE: { id: VistaCamera; nome: string }[] = [
   { id: 'reset', nome: 'Vista generale' },
   { id: 'frontale', nome: 'Frontale' },
+  { id: 'laterale', nome: 'Laterale' },
+  { id: 'posteriore', nome: 'Posteriore' },
+  { id: 'alto', nome: 'Dall’alto' },
   { id: 'interno', nome: 'Interno' },
   { id: 'scheda-madre', nome: 'Scheda madre' },
   { id: 'dissipatore', nome: 'Dissipatore' },
@@ -29,6 +33,7 @@ const VISTE: { id: VistaCamera; nome: string }[] = [
   { id: 'ssd', nome: 'SSD' },
   { id: 'psu', nome: 'Alimentatore' },
   { id: 'ventole', nome: 'Ventole' },
+  { id: 'cablaggio', nome: 'Cablaggio' },
 ]
 
 export function BarraCamera({ onRgb, rgbAperto }: { onRgb: () => void; rgbAperto: boolean }) {
@@ -86,9 +91,8 @@ export function BarraCamera({ onRgb, rgbAperto }: { onRgb: () => void; rgbAperto
         <Ico titolo={pref.ambiente === 'scrivania' ? 'Torna alla vista studio' : 'Mostra il PC sulla scrivania'} attivo={pref.ambiente === 'scrivania'} onClick={() => setPref({ ambiente: pref.ambiente === 'scrivania' ? 'studio' : 'scrivania' })}>
           <MonitorIcon size={15} />
         </Ico>
-        <button type="button" onClick={() => setPref({ qualitaManuale: true, qualita: qualitaEffettiva(pref) === 'alta' ? 'media' : qualitaEffettiva(pref) === 'media' ? 'bassa' : 'alta' })} title="Qualità grafica: se il 3D è lento, abbassala" aria-label={`Qualità grafica: ${qualitaEffettiva(pref)}`} className="h-8 rounded-lg border border-white/[0.08] px-2 text-[11px] font-medium capitalize text-mut transition-colors hover:border-white/20 hover:text-txt">
-          {qualitaEffettiva(pref)}
-        </button>
+        <MenuVista />
+        <MenuQualita />
       </div>
     </div>
   )
@@ -362,7 +366,7 @@ export function PannelloDestro({ a, onEsporta }: { a: Analisi; onEsporta: () => 
         )}
       </div>
 
-      <div className="border-t border-white/[0.06] bg-ant/95 p-3">
+      <div className="border-t border-white/[0.06] bg-ant/95 p-3 lg:hidden">
         <Bottone variante="primario" disabled={!a.completabile} onClick={onEsporta} title={a.completabile ? 'Salva ed esporta la tua build' : a.motivoBlocco} className="w-full !py-3 !text-[13.5px]">
           Completa ed Esporta Build
         </Bottone>

@@ -4,9 +4,9 @@ import { analizza } from '../engine/compat'
 import { dataIt, dataOraIt, euro, iniziali } from '../lib/format'
 import { scaricaBlob } from '../lib/export'
 import { esciDaGoogle, googleAttivo } from '../lib/google'
-import { qualitaEffettiva } from '../lib/qualita'
 import { useStore } from '../store/useStore'
 import { AccessoGoogle } from '../ui/AccessoGoogle'
+import { SelettoreQualita } from '../ui/Qualita'
 import { MessaggioAggiornamenti } from '../ui/Aggiornamenti'
 import { Badge, Bottone, Interruttore, Vuoto, tonoBuild } from '../ui/base'
 
@@ -156,13 +156,9 @@ export default function Account() {
               <div className="flex items-center justify-between gap-3 py-2.5">
                 <div>
                   <p className="text-[13px] font-medium text-txt">Qualità grafica del 3D</p>
-                  <p className="text-[11.5px] text-mut">Sul telefono è «Bassa» per essere più fluida: sul computer puoi alzarla.</p>
+                  <p className="text-[11.5px] text-mut">«Automatica» sceglie da sola in base agli FPS. Il livello 4K è per monitor 4K e GPU potenti.</p>
                 </div>
-                <select aria-label="Qualità grafica" value={qualitaEffettiva(pref)} onChange={(e) => setPref({ qualitaManuale: true, qualita: e.target.value as 'alta' | 'media' | 'bassa' })} className="rounded-lg border border-white/[0.1] bg-obs px-2.5 py-1.5 text-[12.5px] text-txt">
-                  <option value="alta">Alta</option>
-                  <option value="media">Media</option>
-                  <option value="bassa">Bassa</option>
-                </select>
+                <SelettoreQualita />
               </div>
             </div>
           </section>

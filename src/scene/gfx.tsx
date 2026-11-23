@@ -13,6 +13,17 @@ export type Bersaglio = keyof ImpostazioniRgb['bersagli']
 /* ================================================================ texture */
 
 const cache = new Map<string, THREE.Texture>()
+let anisotropia = 8
+
+/** Filtro anisotropico delle texture (nitidezza di superfici viste di striscio): dipende dalla qualità. */
+export function impostaAnisotropia(n: number) {
+  if (n === anisotropia) return
+  anisotropia = n
+  cache.forEach((t) => {
+    t.anisotropy = n
+    t.needsUpdate = true
+  })
+}
 
 function rng(seed: number) {
   let s = seed >>> 0 || 1
@@ -35,7 +46,7 @@ function tex(key: string, w: number, h: number, draw: (c: CanvasRenderingContext
   draw(ctx, w, h)
   const t = new THREE.CanvasTexture(cv)
   t.colorSpace = opz.srgb === false ? THREE.NoColorSpace : THREE.SRGBColorSpace
-  t.anisotropy = 8
+  t.anisotropy = anisotropia
   if (opz.repeat) {
     t.wrapS = t.wrapT = THREE.RepeatWrapping
     t.repeat.set(opz.repeat[0], opz.repeat[1])
